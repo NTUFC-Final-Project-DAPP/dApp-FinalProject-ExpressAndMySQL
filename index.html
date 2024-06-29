@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Purchase</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.4.6/ethers.umd.min.js"></script>
+  <style>
+    .course {
+      border: 1px solid #ccc;
+      padding: 16px;
+      margin: 16px;
+      border-radius: 8px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Available Courses</h1>
+  
+  <div class="course">
+    <h2>Course 1</h2>
+    <p>Description for Course 1</p>
+    <button onclick="buyCourse(1, '0.1')">Buy Course 1 for 0.1 ETH</button>
+  </div>
+  
+  <div class="course">
+    <h2>Course 2</h2>
+    <p>Description for Course 2</p>
+    <button onclick="buyCourse(2, '0.15')">Buy Course 2 for 0.15 ETH</button>
+  </div>
+  
+  <div class="course">
+    <h2>Course 3</h2>
+    <p>Description for Course 3</p>
+    <button onclick="buyCourse(3, '0.2')">Buy Course 3 for 0.2 ETH</button>
+  </div>
+  
+  <div class="course">
+    <h2>Course 4</h2>
+    <p>Description for Course 4</p>
+    <button onclick="buyCourse(4, '0.25')">Buy Course 4 for 0.25 ETH</button>
+  </div>
+
+  <script>
+    async function buyCourse(courseId, price) {
+      if (!window.ethereum) {
+        alert('MetaMask is not installed!');
+        return;
+      }
+
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const contractAddress = '0x98a1802a4D21E1E6B99f95855413297041A35584'; // Replace with your contract address
+        const abi = [
+          {
+            "inputs": [
+              {
+                "internalType": "uint256",
+                "name": "courseId",
+                "type": "uint256"
+              }
+            ],
+            "name": "buyCourse",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+          },
+          {
+            "inputs": [
+              {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+              }
+            ],
+            "name": "courseOwners",
+            "outputs": [
+              {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          },
+          {
+            "inputs": [],
+            "name": "coursePrice",
+            "outputs": [
+              {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+              }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+          }
+        ];
+        const contract = new ethers.Contract(contractAddress, abi, signer);
+
+        // Check if the user already owns the course
+        const owner = await contract.courseOwners(courseId);
+        if (owner !== ethers.constants.AddressZero) {
+          alert('You already own this course.');
+          window.location.href = 'https://m.youtube.com/?hl=zh-tw';
+          return;
+        }
+
+        // Assuming price is in ether, convert it to Wei
+        const priceInWei = ethers.utils.parseEther(price);
+
+        // Set manual gas limit
+        const tx = await contract.buyCourse(courseId, {
+          value: priceInWei,
+          gasLimit: 500000 // Set a reasonable gas limit
+        });
+        await tx.wait();
+        alert('Course purchased successfully!');
+        window.location.href = 'https://m.youtube.com/?hl=zh-tw';
+      } catch (error) {
+        console.error("Transaction failed:", error);
+        if (error.data && error.data.message) {
+          alert('Transaction failed! ' + error.data.message);
+        } else {
+          alert('Transaction failed! ' + error.message);
+        }
+      }
+    }
+  </script>
+</body>
+</html>
